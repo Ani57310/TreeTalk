@@ -1,5 +1,6 @@
 from src.rag import retrieve
 from langchain_ollama import ChatOllama
+from src.translation import translate_text
 
 # Initialize Local LLM
 llm = ChatOllama(
@@ -45,9 +46,27 @@ File: {doc.metadata["file"]}
     return context
 
 
+def is_tamil(text):
+    return any("\u0B80" <= char <= "\u0BFF" for char in text)
+
+
 def answer_question(question):
 
-    docs = retrieve(question)
+    tamil_question = is_tamil(question)
+
+    # Translate Tamil question to English for RAG retrieval
+    if tamil_question:
+        english_question = translate_text(
+            question,
+            "ta-IN",
+            "en-IN"
+        )
+        print(f"\n🔄 Translated question: {english_question}")
+    else:
+        english_question = question
+
+    # Existing TreeTalk RAG pipeline
+    docs = retrieve(english_question)
 
     context = build_context(docs)
 
@@ -61,14 +80,24 @@ def answer_question(question):
 ==========================================================
 
 User Question:
-{question}
+{english_question}
 
 Answer:
 """
 
     response = llm.invoke(prompt)
 
-    return response.content, docs
+    answer = response.content
+
+    # Translate the final answer back to Tamil
+    if tamil_question:
+        answer = translate_text(
+            answer,
+            "en-IN",
+            "ta-IN"
+        )
+
+    return answer, docs
 
 
 def print_sources(docs):
