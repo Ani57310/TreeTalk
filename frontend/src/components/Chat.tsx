@@ -14,80 +14,73 @@ export default function Chat() {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [loading, setLoading] = useState(false);
 
-  async function handleSend(text: string) {
+  async function handleSend(text: string, language: string) {
     const userMessage: MessageType = {
-        id: crypto.randomUUID(),
-        sender: "user",
-        text,
+      id: crypto.randomUUID(),
+      sender: "user",
+      text,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
 
     try {
-        const response = await fetch("http://127.0.0.1:8000/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                message: text,
-            }),
-        });
+      const response = await fetch("http://127.0.0.1:8000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: text,
+        }),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        const botMessage: MessageType = {
-            id: crypto.randomUUID(),
-            sender: "bot",
-            text: data.answer,
-            sources: data.sources,
-        };
+      const botMessage: MessageType = {
+        id: crypto.randomUUID(),
+        sender: "bot",
+        text: data.answer,
+        sources: data.sources,
+      };
 
-        setMessages((prev) => [...prev, botMessage]);
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-        const botMessage: MessageType = {
-            id: crypto.randomUUID(),
-            sender: "bot",
-            text: "⚠️ Unable to reach the TreeTalk backend.",
-        };
+      const botMessage: MessageType = {
+        id: crypto.randomUUID(),
+        sender: "bot",
+        text: "⚠️ Unable to reach the TreeTalk backend.",
+      };
 
-        setMessages((prev) => [...prev, botMessage]);
+      setMessages((prev) => [...prev, botMessage]);
 
-        console.error(error);
+      console.error(error);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
-
       <Header />
 
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6">
-
         {messages.length === 0 ? (
           <Welcome />
         ) : (
           <>
             <div className="flex-1 py-8">
               {messages.map((message) => (
-                <Message
-                  key={message.id}
-                  message={message}
-                />
+                <Message key={message.id} message={message} />
               ))}
 
               {loading && <Loading />}
             </div>
           </>
         )}
-
       </div>
 
       <ChatInput onSend={handleSend} />
-
     </div>
   );
 }

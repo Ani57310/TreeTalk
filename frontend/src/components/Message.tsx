@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { Message as MessageType } from "@/types/chat";
 
 interface Props {
@@ -6,6 +10,45 @@ interface Props {
 
 export default function Message({ message }: Props) {
   const isUser = message.sender === "user";
+  const [playing, setPlaying] = useState(false);
+
+  async function playAudio() {
+    try {
+      setPlaying(true);
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/text-to-speech",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: message.text,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Text-to-speech request failed");
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      const audio = new Audio(audioUrl);
+
+      audio.onended = () => {
+        setPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      await audio.play();
+    } catch (error) {
+      console.error("Text-to-speech error:", error);
+      setPlaying(false);
+    }
+  }
 
   return (
     <div
@@ -37,6 +80,17 @@ export default function Message({ message }: Props) {
           <p className="whitespace-pre-wrap leading-7">
             {message.text}
           </p>
+
+          {!isUser && (
+            <button
+              type="button"
+              onClick={playAudio}
+              disabled={playing}
+              className="mt-4 rounded-full bg-green-700 px-4 py-2 text-sm text-white hover:bg-green-800 disabled:opacity-50"
+            >
+              {playing ? "🔊 Playing..." : "🔊 Listen"}
+            </button>
+          )}
 
           {message.sources &&
             message.sources.length > 0 && (
