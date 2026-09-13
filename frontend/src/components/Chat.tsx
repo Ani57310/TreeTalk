@@ -66,7 +66,7 @@ export default function Chat() {
 
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6">
         {messages.length === 0 ? (
-          <Welcome />
+          <Welcome  onSend={handleSend} />
         ) : (
           <>
             <div className="flex-1 py-8">

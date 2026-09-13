@@ -35,10 +35,14 @@ export default function Message({ message }: Props) {
 
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
-
       const audio = new Audio(audioUrl);
 
       audio.onended = () => {
+        setPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onerror = () => {
         setPlaying(false);
         URL.revokeObjectURL(audioUrl);
       };
@@ -56,11 +60,23 @@ export default function Message({ message }: Props) {
         isUser ? "justify-end" : "justify-start"
       }`}
     >
-      <div className="max-w-3xl">
-
+      <div
+        className={`w-full ${
+          isUser ? "max-w-2xl" : "max-w-3xl"
+        }`}
+      >
         {!isUser && (
           <div className="mb-2 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-700 text-white">
+            <div
+              className="
+                flex h-8 w-8 items-center justify-center
+                rounded-full
+                bg-green-700
+                text-sm
+                text-white
+                shadow-sm
+              "
+            >
               🌳
             </div>
 
@@ -71,47 +87,91 @@ export default function Message({ message }: Props) {
         )}
 
         <div
-          className={`rounded-3xl px-6 py-4 shadow-sm ${
+          className={`rounded-3xl px-6 py-5 shadow-sm ${
             isUser
               ? "bg-green-700 text-white"
-              : "bg-white text-stone-800"
+              : "border border-stone-200 bg-white text-stone-800"
           }`}
         >
-          <p className="whitespace-pre-wrap leading-7">
+          <p className="whitespace-pre-wrap text-[15px] leading-7">
             {message.text}
           </p>
 
           {!isUser && (
-            <button
-              type="button"
-              onClick={playAudio}
-              disabled={playing}
-              className="mt-4 rounded-full bg-green-700 px-4 py-2 text-sm text-white hover:bg-green-800 disabled:opacity-50"
-            >
-              {playing ? "🔊 Playing..." : "🔊 Listen"}
-            </button>
+            <div className="mt-5">
+              <button
+                type="button"
+                onClick={playAudio}
+                disabled={playing}
+                aria-label={
+                  playing
+                    ? "Playing response"
+                    : "Listen to response"
+                }
+                className="
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-full
+                  bg-green-700
+                  px-4
+                  py-2
+                  text-sm
+                  font-medium
+                  text-white
+                  shadow-sm
+                  transition
+                  hover:bg-green-800
+                  hover:shadow
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-green-700
+                  focus:ring-offset-2
+                  disabled:cursor-default
+                  disabled:opacity-60
+                "
+              >
+                {playing ? (
+                  <>
+                    <span className="animate-pulse">🔊</span>
+                    Playing...
+                  </>
+                ) : (
+                  <>
+                    🔊
+                    Listen
+                  </>
+                )}
+              </button>
+            </div>
           )}
 
-          {message.sources &&
-            message.sources.length > 0 && (
-              <div className="mt-5 border-t border-stone-200 pt-3">
+          {message.sources && message.sources.length > 0 && (
+            <div className="mt-6 border-t border-stone-200 pt-4">
+              <p className="mb-3 text-sm font-semibold text-stone-700">
+                Sources
+              </p>
 
-                <p className="mb-2 text-sm font-semibold">
-                  Sources
-                </p>
-
-                <ul className="list-disc pl-5 text-sm">
-                  {message.sources.map((source) => (
-                    <li key={source}>
-                      {source}
-                    </li>
-                  ))}
-                </ul>
-
+              <div className="flex flex-wrap gap-2">
+                {message.sources.map((source) => (
+                  <span
+                    key={source}
+                    className="
+                      rounded-full
+                      bg-stone-100
+                      px-3
+                      py-1.5
+                      text-sm
+                      text-stone-600
+                    "
+                  >
+                    🌳 {source}
+                  </span>
+                ))}
               </div>
-            )}
+            </div>
+          )}
         </div>
-
       </div>
     </div>
   );
