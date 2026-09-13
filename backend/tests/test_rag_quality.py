@@ -51,6 +51,34 @@ class QueryFocusRegressionTests(unittest.TestCase):
             "4 m × 4 m\n- Use Hyblaea puera control measures.",
         )
 
+    def test_tamil_common_name_maps_to_corpus_species_name(self):
+        self.assertEqual(
+            chatbot.normalize_tamil_query_terms(
+                "What is the recommended spacing for a Punnai tree?"
+            ),
+            "What is the recommended spacing for a Calophyllum inophyllum tree?",
+        )
+
+    def test_tamil_translation_preparation_preserves_two_week_interval(self):
+        self.assertEqual(
+            chatbot.prepare_answer_for_tamil_translation(
+                "Spray at fortnightly intervals."
+            ),
+            "Spray once every two weeks.",
+        )
+
+    @patch("src.chatbot.translate_text", side_effect=lambda text, *_: f"TA:{text}")
+    def test_tamil_bullet_answers_are_translated_line_by_line(self, mock_translate):
+        translated = chatbot.translate_answer_to_tamil(
+            "Casuarina trees have these benefits:\n\n- Fix nitrogen.\n- Tolerate salt-laden winds."
+        )
+
+        self.assertEqual(
+            translated,
+            "TA:Casuarina trees have these benefits:\n- TA:Fix nitrogen.\n- TA:Tolerate salt-laden winds.",
+        )
+        self.assertEqual(mock_translate.call_count, 3)
+
     def test_casuarina_question_excludes_unrelated_melia_source(self):
         documents = filter_documents_by_query_focus(
             "What are the benefits of Casuarina trees?",

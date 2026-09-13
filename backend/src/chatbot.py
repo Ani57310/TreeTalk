@@ -36,7 +36,12 @@ Rules:
 17. For a simple fact or single recommendation, answer in one complete sentence. For irrigation frequency, use this sentence order: "During the [stage], irrigate [tree] plants [frequency]." Do not use "watered weekly" or put the stage at the end of the sentence.
 18. Make the first sentence complete and direct; do not begin with an unexplained list, fragment, or label.
 19. For a question about benefits, provide at most three distinct benefits. Prefer the core benefits stated directly in the advisory over cultivation characteristics or extra background details.
+20. When referring to a tree or plant in a multi-point answer, repeat its name instead of using a pronoun such as "they."
 """
+
+TAMIL_TREE_NAME_ALIASES = {
+    "punnai": "Calophyllum inophyllum",
+}
 
 
 def build_context(documents):
@@ -75,6 +80,60 @@ def normalize_answer_format(answer: str) -> str:
     return answer
 
 
+def normalize_tamil_query_terms(question: str) -> str:
+    """Map demonstrated Tamil common-name translations to corpus species names."""
+
+    for alias, species_name in TAMIL_TREE_NAME_ALIASES.items():
+        question = re.sub(
+            rf"\b{re.escape(alias)}\b",
+            species_name,
+            question,
+            flags=re.IGNORECASE,
+        )
+
+    return question
+
+
+def prepare_answer_for_tamil_translation(answer: str) -> str:
+    """Use unambiguous wording for a Sarvam-tested two-week interval."""
+
+    return re.sub(
+        r"\bat fortnightly intervals\b",
+        "once every two weeks",
+        answer,
+        flags=re.IGNORECASE,
+    )
+
+
+def translate_answer_to_tamil(answer: str) -> str:
+    """Translate flat answer bullets independently so Sarvam preserves the list."""
+
+    prepared_answer = prepare_answer_for_tamil_translation(answer)
+    lines = prepared_answer.splitlines()
+    bullet_indexes = [
+        index for index, line in enumerate(lines) if line.startswith("- ")
+    ]
+
+    if not bullet_indexes:
+        return translate_text(prepared_answer, "en-IN", "ta-IN")
+
+    introduction = " ".join(
+        line.strip() for line in lines[:bullet_indexes[0]] if line.strip()
+    )
+    translated_lines = []
+
+    if introduction:
+        translated_lines.append(translate_text(introduction, "en-IN", "ta-IN"))
+
+    for line in lines[bullet_indexes[0]:]:
+        if line.startswith("- "):
+            translated_lines.append(
+                "- " + translate_text(line[2:], "en-IN", "ta-IN")
+            )
+
+    return "\n".join(translated_lines)
+
+
 def answer_question(question):
 
     tamil_question = is_tamil(question)
@@ -86,6 +145,7 @@ def answer_question(question):
             "ta-IN",
             "en-IN"
         )
+        english_question = normalize_tamil_query_terms(english_question)
         print(f"\n🔄 Translated question: {english_question}")
     else:
         english_question = question
@@ -116,11 +176,7 @@ Answer:
 
     # Translate the final answer back to Tamil
     if tamil_question:
-        answer = translate_text(
-            answer,
-            "en-IN",
-            "ta-IN"
-        )
+        answer = translate_answer_to_tamil(answer)
 
     return answer, docs
 
