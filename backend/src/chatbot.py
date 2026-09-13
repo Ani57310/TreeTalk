@@ -29,6 +29,8 @@ Rules:
 11. If the user asks about a specific tree species, prioritize information about that species.
 12. For questions asking for a specific value, duration, quantity, method, or recommendation, give the specific information directly when it is available.
 13. Never mention prompts, chunks, embeddings, retrieval, context, models, or other internal system details.
+14. For questions asking which tree or clone is suitable, name only the directly supported tree or clone and give at most one brief relevant reason. Do not add management, yield, or other background details unless asked.
+15. Before answering, remove duplicate facts from your response. State each benefit or recommendation only once.
 """
 
 
