@@ -1,6 +1,7 @@
 from src.rag import retrieve
 from langchain_ollama import ChatOllama
 from src.translation import translate_text
+import re
 
 # Initialize Local LLM
 llm = ChatOllama(
@@ -31,6 +32,10 @@ Rules:
 13. Never mention prompts, chunks, embeddings, retrieval, context, models, or other internal system details.
 14. For questions asking which tree or clone is suitable, name only the directly supported tree or clone and give at most one brief relevant reason. Do not add management, yield, or other background details unless asked.
 15. Before answering, remove duplicate facts from your response. State each benefit or recommendation only once.
+16. Use plain text only. Do not use Markdown emphasis, headings, tables, nested lists, asterisks, or underscores for formatting. Write scientific names as ordinary text. If a list is needed, use flat "- " bullets only.
+17. For a simple fact or single recommendation, answer in one complete sentence. For irrigation frequency, use this sentence order: "During the [stage], irrigate [tree] plants [frequency]." Do not use "watered weekly" or put the stage at the end of the sentence.
+18. Make the first sentence complete and direct; do not begin with an unexplained list, fragment, or label.
+19. For a question about benefits, provide at most three distinct benefits. Prefer the core benefits stated directly in the advisory over cultivation characteristics or extra background details.
 """
 
 
@@ -58,6 +63,16 @@ File: {doc.metadata["file"]}
 
 def is_tamil(text):
     return any("\u0B80" <= char <= "\u0BFF" for char in text)
+
+
+def normalize_answer_format(answer: str) -> str:
+    """Convert common model Markdown into the chat UI's plain-text format."""
+
+    answer = re.sub(r"(?m)^(\s*)[*+]\s+", r"\1- ", answer)
+    answer = answer.replace("**", "")
+    answer = re.sub(r"(?<!\w)_([^_\n]+)_(?!\w)", r"\1", answer)
+
+    return answer
 
 
 def answer_question(question):
@@ -97,7 +112,7 @@ Answer:
 
     response = llm.invoke(prompt)
 
-    answer = response.content
+    answer = normalize_answer_format(response.content)
 
     # Translate the final answer back to Tamil
     if tamil_question:

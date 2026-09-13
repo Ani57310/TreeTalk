@@ -33,6 +33,24 @@ WINDBREAK_DOCUMENTS = [
 
 
 class QueryFocusRegressionTests(unittest.TestCase):
+    def test_prompt_requires_plain_and_direct_answer_formatting(self):
+        self.assertIn("Use plain text only", chatbot.SYSTEM_PROMPT)
+        self.assertIn("Write scientific names as ordinary text", chatbot.SYSTEM_PROMPT)
+        self.assertIn('use flat "- " bullets only', chatbot.SYSTEM_PROMPT)
+        self.assertIn("answer in one complete sentence", chatbot.SYSTEM_PROMPT)
+        self.assertIn("During the [stage], irrigate [tree] plants [frequency]", chatbot.SYSTEM_PROMPT)
+        self.assertIn("provide at most three distinct benefits", chatbot.SYSTEM_PROMPT)
+
+    def test_answer_format_normalization_keeps_plain_text_and_values(self):
+        answer = chatbot.normalize_answer_format(
+            "**4 m × 4 m**\n* Use _Hyblaea puera_ control measures."
+        )
+
+        self.assertEqual(
+            answer,
+            "4 m × 4 m\n- Use Hyblaea puera control measures.",
+        )
+
     def test_casuarina_question_excludes_unrelated_melia_source(self):
         documents = filter_documents_by_query_focus(
             "What are the benefits of Casuarina trees?",
